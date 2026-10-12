@@ -36,7 +36,7 @@ checkout's `.env.local` when run from a Git worktree.
 | `ZETARIS_USERNAME` | JDBC, OpenAPI spec, optional UI-proxy login | Your Zetaris user ID |
 | `ZETARIS_PASSWORD` | JDBC, OpenAPI spec, optional UI-proxy login | Your Zetaris password |
 | `ZETARIS_REST_URL` | Direct REST | API base ending in `/api/v1.0`; local default is `http://localhost:8888/api/v1.0` |
-| `ZETARIS_ORG_ID` | REST, UI proxy | Numeric organisation ID. Local instances often use `1`; confirm yours. |
+| `ZETARIS_ORG_ID` | REST, UI proxy | Numeric **ID** shown under **Management → Organisation** in the Zetaris UI. See [Find your organisation ID](#3-find-your-organisation-id). |
 | `ZETARIS_API_KEY` | REST, UI proxy | API key you create in the Zetaris GUI |
 | `ZETARIS_BASE_URL` | UI-proxy helpers | Web UI origin, such as `http://localhost:3000`; no path after the origin |
 | `ZETARIS_QUERY_LIMIT` | UI-proxy query helper | Positive row limit; defaults to `1000` |
@@ -63,12 +63,16 @@ bearer key. JDBC uses the username and password.
 
 ## 3. Find your organisation ID
 
-Use the numeric ID supplied for your Zetaris account. If you are signed in and
-the UI can make a successful data request, you can find `X-Org-ID` in that
-request's headers in the browser's Network panel. Copy only the numeric ID.
-Never copy or share the Authorization or Cookie headers, tokens, or the full
-request. Do not guess an endpoint or an organisation ID. If the ID is unknown,
-use the SQL Editor until it is confirmed. The UI-proxy helpers require this
+1. Sign in to the Zetaris UI.
+2. In the sidebar, open **Management → Organisation**.
+3. Copy the numeric value in the **ID** field into `ZETARIS_ORG_ID` in `.env.local`.
+
+Use the **ID**, not the organisation name or login URL slug. For example, if
+the ID field shows `1`, set `ZETARIS_ORG_ID=1`. Use the value shown for your
+organisation.
+
+If you cannot access this page, ask your organiser or administrator for the
+numeric organisation ID. Direct REST and the UI-proxy helpers require this
 setting.
 
 ## 4. Prepare JDBC
