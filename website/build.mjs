@@ -84,6 +84,7 @@ for (const [source, label] of pages) {
   const route = routes.get(source);
   const headings = [];
   const slugs = new Map();
+  let setupProtocol;
   const parser = new Marked({
     gfm: true,
     renderer: {
@@ -94,8 +95,9 @@ for (const [source, label] of pages) {
         const count = slugs.get(base) || 0;
         slugs.set(base, count + 1);
         const id = count ? `${base}-${count}` : base;
-        if (depth === 2 || depth === 3) headings.push({ depth, text, id });
-        return `<h${depth} id="${escape(id)}">${text}</h${depth}>\n`;
+        const display = source === 'docs/connections/client-setup.md' ? text.replace(/^\d+\. /, '') : text;
+        if (depth === 2 || depth === 3) headings.push({ depth, text: display, id, protocol: setupProtocol });
+        return `<h${depth} id="${escape(id)}">${display}</h${depth}>\n`;
       },
       table(token) {
         return `<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table">${Renderer.prototype.table.call(this, token)}</div>`;
@@ -118,14 +120,27 @@ for (const [source, label] of pages) {
       }
     },
   });
-  let content = parser.parse(readFileSync(path.join(root, source), 'utf8'));
+  const markdown = readFileSync(path.join(root, source), 'utf8');
+  let content;
+  if (source === 'docs/connections/client-setup.md') {
+    const [intro, jdbc, rest] = markdown.split(/<!-- protocol: (?:jdbc|rest) -->/);
+    if (!jdbc || !rest) throw new Error('Missing client setup protocol content');
+    content = parser.parse(intro);
+    content += '<div class="setup-switch" role="group" aria-label="Connection instructions"><button type="button" data-setup-choice="jdbc" aria-pressed="true">JDBC</button><button type="button" data-setup-choice="rest" aria-pressed="false">REST</button></div>';
+    for (const [protocol, guide] of [['jdbc', jdbc], ['rest', rest]]) {
+      setupProtocol = protocol;
+      content += `<section data-setup-protocol="${protocol}" aria-label="${protocol.toUpperCase()} instructions">${parser.parse(guide)}</section>`;
+    }
+  } else {
+    content = parser.parse(markdown);
+  }
   if (source === 'START-HERE.md' || source === 'docs/connections/README.md' || source === 'docs/install/updated_zetaris_installation_guide.md') content += launcher;
   if (content.includes('class="assistant-launcher"')) {
     const entry = { depth: 2, text: 'Start with your coding assistant', id: 'assistant-heading' };
     headings.push(entry);
   }
   const nav = groups.map(([title, entries]) => `<div class="nav-group"><p>${escape(title)}</p>${entries.map(([file, text]) => `<a href="${relative(route, routes.get(file))}"${file === source ? ' aria-current="page"' : ''}>${escape(text)}</a>`).join('')}</div>`).join('');
-  const toc = headings.map(({ depth, text, id }) => `<a class="depth-${depth}" href="#${escape(id)}">${text}</a>`).join('');
+  const toc = headings.map(({ depth, text, id, protocol }) => `<a class="depth-${depth}" href="#${escape(id)}"${protocol ? ` data-setup-outline="${protocol}"` : ''}>${text}</a>`).join('');
   const position = journey.indexOf(source);
   const pager = position < 0 ? '' : `<nav class="pager" aria-label="Journey steps">${[position - 1, position + 1].map((index, side) => {
     if (!journey[index]) return '<span></span>';

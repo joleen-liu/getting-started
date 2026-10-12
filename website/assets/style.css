@@ -1,6 +1,11 @@
 @font-face { font-family: "Plus Jakarta Sans"; src: url("fonts/plus-jakarta-sans.ttf") format("truetype"); font-style: normal; font-weight: 200 800; font-display: swap; }
 :root { color-scheme: light; --ink: #06070d; --muted: #595e6e; --line: #e7e7ee; --accent: #4052f2; --accent-hover: #2f3ec2; --soft: #f3f5fe; --selected: #dbe0fd; --surface: #fff; --panel: #f3f5fe; --focus: #4052f2; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
+.setup-switch { display: flex; gap: 4px; width: fit-content; padding: 4px; margin: 24px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.setup-switch button { min-width: 100px; min-height: 44px; padding: 10px 24px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-weight: 650; cursor: pointer; }
+.setup-switch button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.setup-switch button:hover { box-shadow: inset 0 0 0 1px var(--accent); }
 html { scroll-padding-top: 100px; }
 body { margin: 0; background: var(--surface); color: var(--ink); font: 16px/1.55 "Plus Jakarta Sans", system-ui, sans-serif; }
 a { color: var(--accent); text-underline-offset: 3px; }
@@ -51,7 +56,7 @@ article blockquote { border-left: 3px solid var(--accent); margin: 24px 0; paddi
 article blockquote p:last-child { margin: 0; }
 code { font: .86em/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--panel); padding: 2px 5px; border-radius: 3px; overflow-wrap: anywhere; }
 article :is(h1, h2, h3, h4, h5, h6) code { font: inherit; background: none; padding: 0; border-radius: 0; }
-pre { position: relative; background: var(--panel); border: 1px solid var(--line); padding: 48px 20px 20px; border-radius: 12px; overflow-x: auto; margin: 24px 0; }
+pre { position: relative; background: var(--panel); border: 1px solid var(--line); padding: 20px 80px 20px 20px; border-radius: 12px; overflow-x: auto; margin: 24px 0; }
 pre code { font-size: 13px; background: none; padding: 0; overflow-wrap: normal; }
 .copy-button { position: absolute; top: 9px; right: 9px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; color: var(--muted); padding: 4px 10px; font: 500 12px/1.55 "Plus Jakarta Sans", system-ui, sans-serif; cursor: pointer; }
 .table-scroll { overflow-x: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: 12px; }
