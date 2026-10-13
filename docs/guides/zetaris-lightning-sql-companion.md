@@ -57,11 +57,13 @@ CREATE LIGHTNING DATABASE <logical_datasource_name> DESCRIBE BY "<short descript
 
 A REST table exposes the API's JSON response. A SchemaStore view flattens it. Inspect a real response before writing the view.
 
-1. **Object with arrays of objects** (EDGAR, PokéAPI, Open Food Facts, NASA NeoWs): use `LATERAL VIEW explode(...)` and dot access.
-2. **Array inside a wrapper object** (Singapore PM2.5 `data.items`): explode the nested array.
-3. **Top-level array** (NASA DONKI): check first whether the connector accepts it.
-4. **Nested objects without arrays** (Open Food Facts `product.nutriments`): use dot access; do not call `explode()`.
-5. **Objects with dynamic keys** (Eurostat, ABS, `company_dns`): see section 3.
+1. **Top-level object, array-of-structs field(s)** (EDGAR, PokéAPI, Open Food Facts, NASA NeoWs, and `company_dns`'s V4, EU NACE and Japan endpoints, whose `data` is a flat array of objects) — `LATERAL VIEW explode(<array_field>) AS fact` then plain dot-access, `fact.val`. This nests arbitrarily deep (PokéAPI's `ability.ability.name`, two levels deep, confirmed working).
+2. **Array-of-structs nested under a non-array wrapper key** (Singapore PM2.5, `data.items`) — same `explode()`, just applied one level deeper.
+3. **Top-level JSON array, no wrapping object** (NASA DONKI) — whether `CREATE LIGHTNING REST TABLE` accepts this at all is the first thing to check; don't assume.
+4. **Flat struct, no array anywhere** (Open Food Facts `product.nutriments`) — plain dot-access all the way down, **no `explode()`**. Don't reach for `explode()` reflexively; check whether the node is actually an array first.
+5. **Dynamic-key ("map-shaped") object** (Eurostat/ABS SDMX-JSON, `company_dns`'s V3 SIC lookup) — see section 3 below; this is its own technique, not a variant of #1.
+
+**One service, two shapes (`company_dns` V3 and V4).** The same 1,005 SIC codes come back as a dynamic-key object from V3 (decode it with the section 3 technique) and as a flat array of eight fields from V4 (a plain `explode(data)`). V4 also **renamed the hierarchy levels**: V3 `division` (letter) is V4 `section_id`, V3 `major_group` (2-digit) is V4 `division_id`, V3 `industry_group` (3-digit) is V4 `group_id`, V3 `sic_code` is V4 `class_id`, and the `_desc` columns follow. A column name can therefore mean a different level in each version (`division_desc`: "Manufacturing" in V3, a 2-digit division label in V4). When two versions of one source must coexist, expose the other version's column names through a second view (the `_compat_` views in `open_data/rest_apis/sql/rate_limited/12_company_dns_create.sql`) rather than renaming in downstream SQL.
 
 For parallel arrays that represent paired values, positional expansion such as `posexplode()` may be needed; this pattern has not been confirmed in this repo.
 
@@ -79,7 +81,7 @@ Zetaris infers the JSON type. A quoted number remains a string, so sorting is le
 
 ## 3. Decoding dynamic-key ("map-shaped") JSON
 
-JSON-stat/SDMX sources and some APIs return objects keyed by code rather than arrays. Spark may infer a STRUCT with one field per key.
+JSON-stat/SDMX formats (Eurostat, ABS) and some REST APIs (`company_dns`'s V3 SIC lookup; its V4 endpoint returns a plain array instead) return their payload as an object keyed by a computed offset or code (`{"168": 11.8, "169": 11.5}`), not an array-of-structs. There's nothing to `explode()` directly — Spark's schema inference turns this into a STRUCT with one field per observed key, not a MAP.
 
 - For a known key, use backtick-quoted dot access, such as `` value.`522` ``.
 - To turn the full object into rows, convert it to JSON and parse it with a MAP schema, then explode it:
@@ -125,7 +127,8 @@ Live-check scope on 12 October 2026, Zetaris 2.4.3.1: 96 of 144 SQL command entr
 - **View replacement and cache:** On 2.4.3.1, `CREATE OR REPLACE SCHEMASTORE VIEW` invalidated a test cache. `OFFSITE UNCACHE TABLE` then returned `is not cached`; caching the view again made uncaching succeed. Do not assume view replacement preserves its cache.
 - **Table removal:** On 12 October 2026, `DROP LIGHTNING DATABASE TABLE` removed `reason` from a public S3 filestore registration and `ability` from a public PokéAPI REST registration on Zetaris 2.4.3.1. A `SELECT id, name` returned data from `ability` before the drop. `DROP LIGHTNING DATABASE` then removed the test database. These fixtures do not prove removal works for every connector or registration; use Data Explorer's **File Source & API** panel for an unconfirmed object.
 - **Source failures:** PUDL registration fails on its dotted bucket name ([issue record](../../open_data/parquet_csv/sql/known_to_fail/ISSUE-03-pudl.md)), while Ookla registration returned a 500 with no confirmed cause ([issue record](../../open_data/parquet_csv/sql/known_to_fail/ISSUE-07-ookla.md)). Foursquare, Overture and GBIF registered but failed queries in their tested forms ([Foursquare](../../open_data/parquet_csv/sql/known_to_fail/ISSUE-04-foursquare.md), [Overture](../../open_data/parquet_csv/sql/known_to_fail/ISSUE-05-overture.md), [GBIF](../../open_data/parquet_csv/sql/known_to_fail/ISSUE-08-gbif.md)). A successful `CREATE` alone does not confirm a usable table.
-- **HTTP errors:** Singapore PM2.5 returned 502 under source rate limiting. `company_dns` returned a cold-start 502 and worked on retry. Check the source and wait before retrying; do not treat all 502s as the same failure.
+- **Rate limits:** The `company_dns` operator reports deployment-dependent defaults of 200 requests/minute with a burst of 20, or 5/minute with a burst of 1. Space endpoint-calling statements by at least 15 seconds, cache the raw table, and wait 60 seconds after a 429 before retrying that statement. One statement can trigger several pooled retries. Scripts 12–14 include the cache steps; these limits are operator guidance, not measurements from the SQL command check.
+- **HTTP errors:** Singapore PM2.5 returned 502 under source rate limiting. `company_dns` previously returned a cold-start 502 and worked on retry; the incoming recipe record says its new host no longer scales to zero and the warm-up helper has been removed. Check the source and wait before retrying; do not treat all 502s as the same failure.
 - **JSON request bodies:** Repo scripts use an empty body with `http_encoding "URLENCODED"`. StatCan's JSON endpoint returned 415 with that form. A working JSON-body form has not been confirmed.
 - **Row counts:** Earlier repo runs recorded grid/footer count differences. Compare query results with the source before assuming Zetaris lost rows. Joins can also exclude records: the SIC/EDGAR inner join omitted IBM because its SIC code `3570` was missing from the reference. This is separate from the UI-count observation; see the [USL model checks](../../open_data/usl/usl-sources.md).
 

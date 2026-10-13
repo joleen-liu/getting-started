@@ -12,7 +12,7 @@ These scripts rebuild data products already available through REST/SchemaStore a
 
 This walkthrough runs the simpler `sic_usl` model from `sql/01_sic_usl_create.sql` and its matching select file.
 
-**Prerequisite:** run steps 0–1 of `open_data/rest_apis/sql/non_rate_limited/10_company_dns_sic_create.sql` through `CACHE TABLE company_dns.sic_codes_raw;`. This model activates from that raw REST table.
+**Prerequisite:** `open_data/rest_apis/sql/rate_limited/12_company_dns_create.sql` Steps 0-2 (through `CACHE TABLE company_dns.sic_codes_raw;`) must already have been run on this instance — this model activates directly from that raw V3 REST table. That script is rate limited, so run its steps one at a time, with 15 seconds or more before each step that calls the endpoint (see its header).
 
 1. Open the Zetaris **SQL Editor** and create the namespace:
    ```sql
@@ -32,7 +32,7 @@ This walkthrough runs the simpler `sic_usl` model from `sql/01_sic_usl_create.sq
        industry_group_desc varchar(200)
    );
    ```
-3. Activate it from the raw REST table using the same flattening query as the REST SchemaStore view:
+3. Activate it against the raw REST table (the same flattening query `sql/12_company_dns_create.sql` uses for its V3 SchemaStore view):
    ```sql
    ACTIVATE USL TABLE lightning.metastore.usl_demo.sic_usl.sic_code AS
    SELECT
@@ -69,7 +69,7 @@ This walkthrough runs the simpler `sic_usl` model from `sql/01_sic_usl_create.sq
 
 Both models reuse raw REST tables from the `rest_apis` package. Register them in this order if they are missing:
 
-1. `open_data/rest_apis/sql/non_rate_limited/10_company_dns_sic_create.sql` — Steps 0-1 only (through `CACHE TABLE company_dns.sic_codes_raw;`). This package's `01_sic_usl_create.sql` activates directly from `company_dns.sic_codes_raw`.
+1. `open_data/rest_apis/sql/rate_limited/12_company_dns_create.sql` — Steps 0-2 only (through `CACHE TABLE company_dns.sic_codes_raw;`); it also creates the V4 tables and views, which these models do not use. This package's `01_sic_usl_create.sql` activates directly from `company_dns.sic_codes_raw`.
 2. `open_data/rest_apis/sql/rate_limited/11_edgar_company_profiles_create.sql` — Step 0 and the seven `CREATE LIGHTNING REST TABLE ..._submissions_raw` statements (the `CREATE SCHEMASTORE VIEW` statements in that script are **not** needed here — this package's `sic_edgar_usl` activates directly from the raw `*_submissions_raw` tables, not from `sql/11`'s own profile views).
 
 USL's `ACTIVATE ... AS SELECT` can flatten and join the same raw sources used by SchemaStore views.
@@ -85,7 +85,9 @@ See [`usl-sources.md`](usl-sources.md) for the catalog and verification status:
 | [`sql/01_sic_usl_create.sql`](sql/01_sic_usl_create.sql) / [`_select.sql`](sql/01_sic_usl_select.sql) | `sic_usl`, one `sic_code` table | Baseline compile, activate, DQ, and deferred materialization; reuses the REST table's flattening query. Its self-consistency check is a plain query. |
 | [`sql/02_sic_edgar_usl_create.sql`](sql/02_sic_edgar_usl_create.sql) / [`_select.sql`](sql/02_sic_edgar_usl_select.sql) | `sic_edgar_usl`, `company` and `sic_code` with an FK | Adds a DQ-generating foreign key and activates a union across seven raw REST tables. Its description check is a plain query. |
 
-Run `sic_usl` first, then `sic_edgar_usl`; the second model adds a foreign-key relationship.
+**What was verified.** Both scripts were run unchanged, exactly as they are in this repo, on an instance built from `open_data/rest_apis/sql/rate_limited/12_company_dns_create.sql` (V3 and V4 tables and all four views present), and their `_select.sql` queries were run against the resulting USLs. They activate from the V3 raw table (`company_dns.sic_codes_raw`, which that script keeps under the same name) and do not read the V4 views, so nothing here has been verified about a USL over V4 data or over a schemastore view; whether `ACTIVATE USL TABLE` can read a schemastore view remains untested.
+
+Run them in that order — `sic_usl` is the lower-risk smoke test for the USL lifecycle itself; `sic_edgar_usl` adds relationships on top of a lifecycle already confirmed working.
 
 ## 3. The question `sic_edgar_usl` exists to answer
 

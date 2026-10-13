@@ -2,7 +2,7 @@
 
 Run commands from the repository root. Zetaris and PostgreSQL helpers have
 Deno/TypeScript and Python versions with matching settings and behaviour.
-The company DNS warm-up is Deno-only; the local file downloaders are Python-only.
+The local file downloaders are Python-only.
 
 <a id="find-your-organization-id"></a>
 ## Configure access
@@ -103,8 +103,8 @@ Direct Java JDBC connections do not need Python. The scripts never guess the
 JAR path.
 
 ```sh
-python3 scripts/run_sql.py --dry-run open_data/rest_apis/sql/non_rate_limited/10_company_dns_sic_create.sql
-python3 scripts/run_sql.py open_data/rest_apis/sql/non_rate_limited/10_company_dns_sic_create.sql
+python3 scripts/run_sql.py --dry-run open_data/rest_apis/sql/rate_limited/12_company_dns_create.sql
+python3 scripts/run_sql.py open_data/rest_apis/sql/rate_limited/12_company_dns_create.sql
 python3 scripts/run_sql.py --channel jdbc -e "SELECT 1"
 ```
 
@@ -136,6 +136,12 @@ duplicate errors. Sources marked `known_to_fail` need
 `ACTIVATE USL TABLE` is not verified as a repeatable operation.
 
 <a id="tear-down-and-start-over"></a>
+### Rate limits and deprecated recipes
+
+A manifest source marked `deprecated` needs `--allow-deprecated`; use its replacement instead. The former company DNS recipe 10 is replaced by recipe 12, which keeps V3 and adds V4 plus compatibility views. Recipes 13 and 14 add EU NACE and Japan.
+
+`onboard.py` sends statements back to back. For rate-limited recipes, use SQL Editor to run one statement at a time, waiting at least 15 seconds before each endpoint call identified in the recipe header. Cache the raw table immediately; after HTTP 429, wait 60 seconds and retry that statement rather than the whole script. Do not run deprecated recipe 10 alongside replacement 12 on the same instance.
+
 ## Tear down recipe objects
 
 `teardown` derives SQL drops from create scripts and includes sources that
@@ -190,24 +196,6 @@ versions use 10-second connection and query timeouts.
 ```sh
 deno task ping:postgres
 python3 scripts/ping_postgres.py
-```
-
-## Warm up `company_dns`
-
-The Deno-only `warmup_company_dns.ts` talks directly to the hosted
-`company_dns` service, not Zetaris. It warms the service when an idle hosted
-instance returns an empty response or HTTP 502, then pre-hits its SIC endpoint
-before the matching Zetaris create script. See that script's header and the
-[REST HOWTO](../open_data/rest_apis/HOWTO.md).
-
-```sh
-deno task warmup:company-dns
-```
-
-For a self-hosted service, set its URL and allow Deno to read that variable:
-
-```sh
-COMPANY_DNS_BASE_URL=http://localhost:8000 deno run --allow-net --allow-env=COMPANY_DNS_BASE_URL scripts/warmup_company_dns.ts
 ```
 
 <a id="fetch-local-data-files-for-the-parquetcsv-package"></a>
