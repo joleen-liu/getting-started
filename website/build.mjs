@@ -178,6 +178,19 @@ for (const [source, label] of pages) {
   mkdirSync(path.dirname(path.join(output, route)), { recursive: true });
   writeFileSync(path.join(output, route), html);
 }
+// Preserve the original AWS guide URL for existing links and bookmarks.
+writeFileSync(path.join(output, 'docs/install/aws-installation-guide.html'), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=managed-aws-cluster-guide.html">
+  <link rel="canonical" href="managed-aws-cluster-guide.html">
+  <title>Managed AWS cluster · Zetaris getting started</title>
+</head>
+<body><p>The AWS guide has moved to <a href="managed-aws-cluster-guide.html">Managed AWS cluster</a>.</p></body>
+</html>`);
+
 // Keep the local navigation graph outside the published site artifact.
 const graphDirectory = path.join(root, '.scratch');
 const nodeIds = new Map(pages.map(([source], index) => [source, `p${index}`]));
