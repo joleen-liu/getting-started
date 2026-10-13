@@ -1,6 +1,6 @@
 # Managed AWS cluster
 
-Create a Zetaris compute cluster in your AWS account, sign in to its Gateway and run a query. This guide follows the AWS setup, connection and teardown workflow demonstrated in the recordings on 13 October 2026.
+Create a Zetaris compute cluster in your AWS account, sign in to its Gateway and run a query.
 
 For Docker Compose on your own computer, see [Install locally](updated_zetaris_installation_guide.md). For Docker Compose on a VM you manage, see [Self-managed EC2 and Docker Compose](self-managed-ec2-installation-guide.md).
 
