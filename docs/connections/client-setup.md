@@ -125,6 +125,11 @@ For Zetaris Cloud or another remote instance, use the URLs supplied to you.
 The routes use separate addresses: put the API base in `ZETARIS_REST_URL` and
 the web UI origin in `ZETARIS_BASE_URL`.
 
+For a local install, browse the available endpoints in the
+[REST API docs](http://localhost:8888/redoc/index.html). Scripts use the
+separate API base `http://localhost:8888/api/v1.0`; the docs page is not the
+API base.
+
 ## 2. Set up `.env.local`
 
 Copy the needed settings from [`.env.example`](../../.env.example) into
@@ -267,6 +272,7 @@ base. Do not print or echo the credentials.
 | REST `401` | For direct REST, create a new GUI API key and update `ZETARIS_API_KEY`. The spec route needs Basic auth, not the bearer key. |
 | REST `400 Not Allowed` | Check that `ZETARIS_ORG_ID` is the numeric ID for your account. |
 | REST `400` on a valid request | Check that `X-Request-ID` and `queryId` are UUIDs. |
+| REST preflight says `Operation not permitted` for localhost | The command environment may be blocking local network access before an HTTP response. In Codex, retry the read-only command with the requested network or elevated execution permission if offered. Do not change the API path or key based on this error. If permission cannot be granted, run the command in a terminal that can reach the Zetaris instance. |
 | UI-proxy helper cannot connect | Set `ZETARIS_BASE_URL` to the web UI origin, not the direct API address. |
 | A source is missing from `SHOW DATASOURCES` | Check `SHOW LIGHTNING DATABASES`; REST and file registrations appear there. |
 | `Table not found` | Use the qualified name `<source>.<table>`. |

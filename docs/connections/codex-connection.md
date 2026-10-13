@@ -22,6 +22,13 @@ objects alone.
 - Access to the Zetaris instance you want to use.
 - Permission for Codex to run the repository's scripts and reach that instance.
 
+For a local REST instance, `Operation not permitted` when connecting to
+`localhost` can mean Codex's command environment blocked local network access;
+it does not by itself indicate a bad API URL or key. Retry the read-only
+preflight with the network or elevated execution permission if Codex offers it.
+If that permission is unavailable, run the command in a terminal that can
+reach the instance. See [REST troubleshooting](client-setup.md#10-troubleshooting).
+
 JDBC also needs Java, the Zetaris driver JAR, and your Zetaris user ID and
 password. REST needs an API key that you create in the Zetaris GUI. See the
 [shared connection settings](client-setup.md#2-set-up-envlocal).
