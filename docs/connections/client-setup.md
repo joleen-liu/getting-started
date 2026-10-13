@@ -30,29 +30,46 @@ a prompt, source file, command output or URL.
 
 ## 4. Prepare JDBC
 
-JDBC needs JDK 11 or later, the matching Zetaris driver JAR, and your Zetaris
-user ID and password. A direct Java connection does not need Python. The
-repository's Python JDBC runner additionally needs `jaydebeapi` in `.venv`.
-On macOS,
-`java` may be a stub even if a Homebrew JDK is installed; check
-`/usr/libexec/java_home` and
-`/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` and set
-`JAVA_HOME` to the JDK path. Do not assume or search for the driver JAR path.
+To connect with JDBC, you need Java 11 or later, the Zetaris driver file (a
+`.jar` file), and your Zetaris username and password. The driver must match
+your Zetaris instance. Get its full file path from whoever supplied the driver;
+the setup scripts do not search for it.
 
-The read-only preflight reports what is missing and installs nothing. Its
-`--jdbc` mode also checks direct REST readiness, so a REST-only failure does
-not by itself mean JDBC is unavailable. Read the JDBC-specific result
-separately:
+On macOS, the `java` command may not find an installed Java runtime. If that
+happens, check `/usr/libexec/java_home` or the Homebrew JDK location
+`/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`, then set
+`JAVA_HOME` to the JDK folder. The preflight finds a Java path but does not
+check its version. Confirm it with:
 
 ```sh
-python3 scripts/preflight.py --jdbc --jar /path/to/zetaris-driver.jar
+"$JAVA_HOME/bin/java" -version
 ```
 
-Preflight detects the Java path, not its version. After setting `JAVA_HOME`,
-run `"$JAVA_HOME/bin/java" -version` to confirm that runtime is JDK 11 or later.
+To check your setup, run this read-only preflight from the repository folder:
 
-If there is no JDK, ask before installing one. If Java is not available, use
-REST if your account has it.
+```sh
+python3 scripts/preflight.py --jdbc --jar "/full/path/to/your/zetaris-driver.jar"
+```
+
+Replace the example path with the actual path to your driver file. The
+preflight installs nothing and does not change your Zetaris instance. It also
+checks REST, so read the JDBC results separately; a REST problem by itself does
+not mean JDBC is unavailable.
+
+The repository's Python SQL runner also needs a local Python environment
+(`.venv`) and the `jaydebeapi` package. If either is missing, that runner is
+not ready. A direct Java JDBC connection does not need these Python components.
+Ask before installing missing software or packages.
+
+If a local port check says `Operation not permitted`, Codex may be blocked from
+accessing your computer's local network. That result does not show that the
+port is closed or that the JDBC URL is wrong. Retry the same read-only check
+with network access, or run it in a terminal that can reach Zetaris. For a
+remote instance, use its supplied host and port; `localhost` refers to the
+machine running the JDBC client.
+
+If Java is missing, ask before installing it. If JDBC is unavailable, use REST
+if your account has access.
 
 ## 5. JDBC starter prompt
 
@@ -65,6 +82,12 @@ me the result. Report JDBC and REST checks separately. Stop on JDBC failures and
 what is missing. REST failures alone do not block JDBC. If the driver JAR path is not set, ask me
 for it. Once readiness checks pass, connect over JDBC to the instance
 configured in .env.local and confirm with SELECT 1 and SHOW LIGHTNING DATABASES.
+
+If a local port check returns `Operation not permitted`, retry the same
+read-only check with approved network access before reporting the endpoint as
+closed. Distinguish missing Python runner dependencies (`.venv` or
+`jaydebeapi`) from direct Java JDBC readiness; do not install dependencies
+without asking.
 
 Goal: <for example: list NY_TAXI and TPCDS_DB tables, then read 5 rows from
 NY_TAXI.taxi_zones; keep it read-only>
