@@ -1,8 +1,8 @@
-# Install Zetaris on AWS
+# Self-managed AWS EC2 and Docker Compose
 
-This guide runs the Zetaris Docker Compose bundle on an AWS virtual machine. For your own computer, use [Install locally](updated_zetaris_installation_guide.md).
+This guide installs the Zetaris Docker Compose bundle on an AWS virtual machine that you manage. It is separate from the [managed AWS cluster](managed-aws-cluster-guide.md) provisioned from Zetaris Cloud. For your own computer, use [Install locally](updated_zetaris_installation_guide.md).
 
-The AWS steps have not been run on AWS. The sizing and cost estimates below were checked for the original guide dated 24 September 2026. Check current prices and account eligibility before launch.
+The self-managed AWS VM steps have not been run on AWS. The sizing and cost estimates below were checked for the original guide dated 24 September 2026. Check current prices and account eligibility before launch. These VM estimates do not apply to managed clusters.
 
 ## 1. Obtain the bundle
 
