@@ -16,13 +16,13 @@ AWS account setup creates networking, a storage bucket and access roles. Billabl
 
 1. In Zetaris Cloud Gateway, open **Compute > Credentials**. The page is titled **AWS Accounts**.
 2. Click **Add AWS Account**, select **Quickstart**, enter a friendly name for the account and click **Continue**.
-3. Choose **US West (N. California), `us-west-1`**, the recommended region for this walkthrough. Review the displayed AWS cost information, then click **Launch Stack**. The cost example uses `us-east-1` rates and does not adjust to your selected region.
+3. Choose **US West (N. California), `us-west-1`**, the recommended region for this guide. Review the displayed AWS cost information, then click **Launch Stack**.
 4. The AWS Console opens in a new tab on **Quick create stack**, with the template and parameters filled in. Check that you are signed in to the intended AWS account and that the region and stack details match the setup.
-5. Leave optional tags, IAM service role and other settings at their defaults. Scroll to **Capabilities** and review the IAM capabilities. Tick the acknowledgement that CloudFormation may create IAM resources with customised names, then click **Create stack**.
-   Opening the AWS form does not create the stack. You must click **Create stack** in AWS, even if Zetaris already says "Your stack is being created".
+5. Leave optional tags, IAM service role and other settings at their defaults. Review **Capabilities**. Tick the acknowledgement that CloudFormation may create IAM resources with customised names, then click **Create stack**.
+   Zetaris may show "Your stack is being created" before you submit the AWS form.
 
 6. Follow the stack's progress in CloudFormation. Wait for the stack to reach `CREATE_COMPLETE`.
-7. Return to the Zetaris setup tab. **Launch Stack** automatically advances it to **Waiting for AWS**, then the callback opens **Verify AWS Account**. This may happen before the whole stack finishes, so still check `CREATE_COMPLETE` in AWS before clicking **Verify**. If you remain on the region page, use **I've already launched the stack** to continue.
+7. Return to the Zetaris setup tab. **Launch Stack** automatically advances it to **Waiting for AWS**, then the callback opens **Verify AWS Account**. Wait for `CREATE_COMPLETE` before clicking **Verify**. If you remain on the region page, use **I've already launched the stack** to continue.
 8. After verification succeeds, click **Done** to save the configuration.
 9. Confirm that the account appears under **Compute > Credentials > Active** with status **Verified**. It is now available for cluster creation.
 
@@ -32,27 +32,27 @@ Keep the stack name and region with your session notes. You will need the corres
 
 1. Open **Compute > Clusters** and click **Create Cluster**.
 2. In **AWS Account**, select the verified Quickstart account you just added.
-3. Enter a **Cluster Name** using 3–32 lowercase letters, digits or hyphens, starting and ending with a letter or digit. Keep this name for the deletion confirmation later.
-4. Choose the **Spark cluster size**. The demonstrated session used **Mini**, a trial configuration with two nodes and four vCPUs in total. Use the current form's options and limits for your account. Node type and node count are fixed for Mini; other sizes expose their own sizing controls.
+3. Enter a **Cluster Name**. Keep this name for the deletion confirmation later.
+4. Choose **Mini** for the **Spark cluster size**. This trial configuration has two nodes and four vCPUs in total.
 5. Review **Networking**. For a Quickstart account, the form reads the VPC and subnets from the CloudFormation stack outputs, so you do not need to select them manually.
-6. Under **Lightning Access**, enter the required **Lightning Admin Email**. Use the email you want as the cluster administrator.
+6. Under **Lightning Access**, enter the required **Lightning Admin Email**.
 7. Review the configuration and cost information shown for your account and selected size, then click **Create Compute Cluster**.
 8. Open the cluster's **Lifecycle** tab and wait for all seven provisioning stages to succeed. Continue when the cluster is **Active**.
 
-Allow approximately **30 minutes** for provisioning. The validated walkthrough took **21 minutes 40 seconds**. Keep the Lifecycle page open to follow progress. If a stage fails, use its displayed error and the cluster's events to resolve the failure before connecting.
+Allow approximately **30 minutes** for provisioning. Keep the Lifecycle page open to follow progress. If a stage fails, use its displayed error and the cluster's events to resolve the failure before connecting.
 
 ## 3. Connect to the Gateway and run a query
 
 1. Open **Compute > Clusters**, select your cluster and open **Overview**.
 2. Under **Access**, open the **Sign-in URL**. This opens the Gateway for this cluster.
 3. Under **Organisations** on the cluster Overview, find your organisation's administrator email and password. Use **Copy password** to copy the masked password. In the Gateway login, enter the administrator email in **USERNAME** and paste the password into **PASSWORD**, then click **Sign In**. Keep them private and out of source files, prompts and recordings you share publicly.
-4. In the Gateway, open **Workbench > SQL Workspace > New Query**. The validated deployment included `NY_TAXI` under **File Source & API** in the data explorer. Enter this query, then click **Execute**:
+4. In the Gateway, open **Workbench > SQL Workspace > New Query**. Find the `NY_TAXI` sample source under **File Source & API** in the data explorer. Enter this query, then click **Execute**:
 
 ```sql
 SELECT * FROM NY_TAXI.taxi_zones LIMIT 5;
 ```
 
-5. Confirm that the result contains **five rows**. This query succeeded in the validated walkthrough without adding a datasource. If `NY_TAXI` is absent, check the sample sources supplied with your deployment before continuing.
+5. Confirm that the result contains **five rows**. If `NY_TAXI` is absent, check the sample sources supplied with your deployment before continuing.
 
 The **Access** section also supplies the cluster hostname and **JDBC endpoint**. If you connect a client or coding assistant, copy the endpoint from your own cluster and follow [Client setup](../connections/client-setup.md). Use the cluster's organisation credentials rather than the credentials from a local Docker installation.
 
@@ -63,7 +63,7 @@ Check the cluster's **Schedule** if you need it to remain available during your 
 1. In Zetaris Cloud Gateway, open **Compute > Clusters** and select your cluster.
 2. Click **Delete**. In **Delete compute?**, read the warning and type the exact cluster name shown in the dialog, then click **Delete** to confirm.
 3. Follow **Lifecycle > Termination Steps** while the status is **Terminating**. The displayed stages are **Draining nodes**, **Deleting cluster** and **Releasing resources**.
-4. Allow approximately **15 minutes** for termination. The validated walkthrough took **10 minutes 9 seconds**. Wait until all three stages succeed and the cluster status is **Deleted**. Return to **Compute > Clusters** and confirm that this cluster is no longer in the active list.
+4. Allow approximately **15 minutes** for termination. Wait until all three stages succeed and the cluster status is **Deleted**. Return to **Compute > Clusters** and confirm that this cluster is no longer in the active list.
 
 The deleted cluster detail page remains available for billing reconciliation, with lifecycle, events and configuration history preserved.
 
@@ -87,13 +87,13 @@ Zetaris cannot delete this CloudFormation stack for you. You must use your own A
 
 The required teardown is complete when the cluster is **Deleted**, the CloudFormation stack has reached `DELETE_COMPLETE`, and the credential appears under **Deleted** in Zetaris.
 
-EFS and S3 storage can remain after this teardown. In the validated walkthrough, the EFS file system remained available and the empty workspace S3 bucket showed `DELETE_SKIPPED` in CloudFormation. We inspected and kept both. Deleting retained storage is optional and permanently removes any data it contains. AWS may continue charging for retained storage and other billable resources.
+EFS and S3 storage can remain after this teardown. Deleting retained storage is optional and permanently removes any data it contains. AWS may continue charging for retained storage and other billable resources.
 
 To review your retained storage, record the **EFS ID** from the cluster **Overview**. Find the workspace bucket's physical ID under **CloudFormation > Resources > WorkspaceS3Bucket**. Review each resource in AWS before deciding whether to keep it.
 
 ## Troubleshooting
 
-- **Lifecycle summary still says "started".** In the validated walkthrough, provisioning and termination summaries retained this wording after completion. Check the individual stages and final cluster status: all seven provisioning stages must succeed with **Active**, or all three termination stages must succeed with **Deleted**.
+- **Lifecycle summary still says "started".** The summary can retain this wording after completion. Check the individual stages and final cluster status: all seven provisioning stages must succeed with **Active**, or all three termination stages must succeed with **Deleted**.
 - **S3 Bucket is blank in Overview.** Use **CloudFormation > Resources > WorkspaceS3Bucket** to find the bucket. A `DELETE_SKIPPED` status means CloudFormation retained it. The cluster's EFS file system is separate from the Quickstart stack and must be reviewed separately.
 
 The managed AWS cost information is separate from the dated EC2 estimate in the [self-managed VM guide](self-managed-ec2-installation-guide.md). Use the current AWS account notice and your AWS billing information for this workflow.
